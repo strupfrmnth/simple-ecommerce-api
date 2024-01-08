@@ -13,7 +13,7 @@ This project is my implementation of E-commerce API which uses Golang + Redis + 
 * Rate limiting for too many requests
 * Limit repeatable requests from same IP during a period
 * CRUD operations on users, products and orders
-* TODO...
+* Password security
 
 ## API
 A simple description of the API is listed below.
