@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"github.com/strupfrmnth/simple-ecommerce-api/internal/repository"
 	"github.com/strupfrmnth/simple-ecommerce-api/pkg/middleware/auth"
 )
@@ -29,6 +30,16 @@ func NewUserHandler() UserHandler {
 	}
 }
 
+func hashPassword(pw *string) {
+	bytePW := []byte(*pw)
+	hashPW, _ := bcrypt.GenerateFromPassword(bytePW, bcrypt.DefaultCost)
+	*pw = string(hashPW)
+}
+
+func confirmPassword(correctpw, pw string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(correctpw), []byte(pw)) == nil
+}
+
 func (uh *userHandler) AddUser(c *gin.Context) {
 	var user repository.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -36,11 +47,13 @@ func (uh *userHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	hashPassword(&user.Password)
 	if err := uh.Repo.AddUser(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	user.Password = ""
 	c.JSON(http.StatusOK, user)
 }
 
@@ -55,11 +68,17 @@ func (uh *userHandler) LoginUser(c *gin.Context) {
 	// get user from database
 	user, err := uh.Repo.GetByUsername(requser.Name)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "No user"})
 		return
 	}
-	signature := auth.CreateToken(user.ID, user.Name)
-	c.JSON(http.StatusOK, gin.H{"status": "you are logged in", "token": signature})
+
+	if isTrue := confirmPassword(user.Password, requser.Password); isTrue {
+		signature := auth.CreateToken(user.ID, user.Name)
+		c.JSON(http.StatusOK, gin.H{"status": "you are logged in", "token": signature})
+		return
+	}
+
+	c.JSON(http.StatusInternalServerError, gin.H{"status": "Not matched password"})
 }
 
 func (uh *userHandler) GetAllUser(c *gin.Context) {
