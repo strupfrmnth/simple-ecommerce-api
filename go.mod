@@ -3,9 +3,9 @@ module github.com/strupfrmnth/simple-ecommerce-api
 go 1.21.0
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/color v1.16.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
 	go.uber.org/ratelimit v0.3.0
